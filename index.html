@@ -1,0 +1,62 @@
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AutoCheck - Inspeção Veicular</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc;
+        }
+        .bg-cyan-brand {
+            background-color: #00bcd4;
+        }
+        .text-cyan-brand {
+            color: #00bcd4;
+        }
+        .border-cyan-brand {
+            border-color: #00bcd4;
+        }
+
+        /* Ajustes para Impressão */
+        @media print {
+            body { background: white !important; }
+            #root > div > header, 
+            #root > div > div:nth-child(2), 
+            main, 
+            button, 
+            .no-print {
+                display: none !important;
+            }
+            .fixed { position: relative !important; inset: 0 !important; background: white !important; }
+            .bg-slate-900\/60 { background: transparent !important; backdrop-filter: none !important; }
+            .shadow-2xl { shadow: none !important; }
+            .rounded-3xl { border-radius: 0 !important; border: none !important; border: 1px solid #eee !important; }
+            .my-8 { margin: 0 !important; }
+            .max-w-2xl { max-width: 100% !important; }
+            .overflow-y-auto { overflow: visible !important; }
+        }
+    </style>
+<script type="importmap">
+{
+  "imports": {
+    "react": "https://esm.sh/react@^19.2.3",
+    "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
+    "react/": "https://esm.sh/react@^19.2.3/",
+    "@google/genai": "https://esm.sh/@google/genai@^1.37.0",
+    "qrcode": "https://esm.sh/qrcode@1.5.3"
+  }
+}
+</script>
+<link rel="stylesheet" href="/index.css">
+</head>
+<body>
+    <div id="root"></div>
+<script type="module" src="/index.jsx"></script>
+</body>
+</html>
