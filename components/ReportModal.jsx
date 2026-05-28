@@ -1,7 +1,7 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 import QRCode from 'qrcode';
-import { supabase } from '../utils/supabaseClient';
+import { supabase } from '../services/supabaseClient';
 
 const ReportModal = ({ data, onClose, onSaveToHistory }) => {
   const qrRef = useRef(null);
