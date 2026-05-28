@@ -1,10 +1,13 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 import QRCode from 'qrcode';
+import { supabase } from '../utils/supabaseClient';
 
 const ReportModal = ({ data, onClose, onSaveToHistory }) => {
   const qrRef = useRef(null);
   const [selectedPhoto, setSelectedPhoto] = useState(null);
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveError, setSaveError] = useState(null);
   
   useEffect(() => {
     if (qrRef.current) {
@@ -34,9 +37,39 @@ const ReportModal = ({ data, onClose, onSaveToHistory }) => {
     window.open(`https://api.whatsapp.com/send?phone=55${phone}&text=${message}`, '_blank');
   };
 
-  const handleSave = () => {
-    onSaveToHistory(data);
-    onClose();
+  const handleSave = async () => {
+    setIsSaving(true);
+    setSaveError(null);
+
+    try {
+      const fotosUrl = data.photos && data.photos.length > 0 
+        ? data.photos.join('|') 
+        : null;
+
+      const { error } = await supabase
+        .from('inspecoes')
+        .insert([
+          {
+            veiculo_placa: data.vehicle?.plate || '',
+            cliente_nome: data.client?.name || '',
+            status: 'completo',
+            observacoes: data.observations || '',
+            fotos_url: fotosUrl
+          }
+        ]);
+
+      if (error) {
+        setSaveError(error.message || 'Erro ao salvar inspeção');
+        setIsSaving(false);
+        return;
+      }
+
+      onSaveToHistory(data);
+      onClose();
+    } catch (err) {
+      setSaveError(err.message || 'Erro desconhecido ao salvar');
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -180,20 +213,36 @@ const ReportModal = ({ data, onClose, onSaveToHistory }) => {
 
         {/* Parte das ações */}
         <div className="p-8 border-t border-slate-50 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 no-print">
+          {saveError && (
+            <div className="mb-4 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-2xl">
+              <p className="text-sm font-semibold text-red-600 dark:text-red-400">{saveError}</p>
+            </div>
+          )}
           <div className="flex flex-col sm:flex-row gap-3">
             <button 
               onClick={handleWhatsApp}
-              className="flex-[2] py-4 bg-[#25D366] hover:bg-[#128C7E] text-white font-bold rounded-2xl shadow-lg shadow-green-100 dark:shadow-none transition-all flex items-center justify-center space-x-3"
+              disabled={isSaving}
+              className="flex-[2] py-4 bg-[#25D366] hover:bg-[#128C7E] disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold rounded-2xl shadow-lg shadow-green-100 dark:shadow-none transition-all flex items-center justify-center space-x-3"
             >
               <i className="fab fa-whatsapp text-xl"></i>
               <span>Enviar via WhatsApp</span>
             </button>
             <button 
               onClick={handleSave}
-              className="flex-1 py-4 bg-[#1D63BD] hover:bg-[#154A8D] text-white font-bold rounded-2xl shadow-lg shadow-blue-100 dark:shadow-none transition-all flex items-center justify-center space-x-3"
+              disabled={isSaving}
+              className="flex-1 py-4 bg-[#1D63BD] hover:bg-[#154A8D] disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold rounded-2xl shadow-lg shadow-blue-100 dark:shadow-none transition-all flex items-center justify-center space-x-3"
             >
-              <i className="fas fa-save"></i>
-              <span>Salvar no Histórico</span>
+              {isSaving ? (
+                <>
+                  <i className="fas fa-spinner animate-spin"></i>
+                  <span>Salvando...</span>
+                </>
+              ) : (
+                <>
+                  <i className="fas fa-save"></i>
+                  <span>Salvar no Histórico</span>
+                </>
+              )}
             </button>
           </div>
           <button 
