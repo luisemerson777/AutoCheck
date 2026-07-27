@@ -59,6 +59,7 @@ const App: React.FC = () => {
   
   // Inicialização segura: Lê do LocalStorage ANTES da primeira renderização
   const [history, setHistory] = useState<InspectionData[]>(() => {
+    if (typeof window === 'undefined') return [];
     const saved = localStorage.getItem('autocheck_history');
     if (saved) {
       try {
@@ -73,7 +74,11 @@ const App: React.FC = () => {
 
   // Sincroniza com LocalStorage apenas quando o histórico REALMENTE muda
   useEffect(() => {
-    localStorage.setItem('autocheck_history', JSON.stringify(history));
+    try {
+      localStorage.setItem('autocheck_history', JSON.stringify(history));
+    } catch (e) {
+      console.warn('AutoCheck: Falha ao salvar histórico no localStorage (quota excedida?)', e);
+    }
   }, [history]);
 
   const handleSubmit = (data: InspectionData) => {

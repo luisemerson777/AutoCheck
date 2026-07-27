@@ -3,11 +3,22 @@ import React, { useState, useEffect } from 'react';
 import { InspectionData, InspectionStatus } from '../types';
 import FormCard from './FormCard';
 import RatingSelector from './RatingSelector';
+import {
+  FLUID_FIELDS,
+  FLUID_STATUSES,
+  ELECTRICAL_FIELDS,
+  ELECTRICAL_STATUSES,
+  CHECKOUT_FIELDS,
+  BATTERY_LABELS,
+} from '../constants';
 
 interface Props {
   initialData: InspectionData;
   onSubmit: (data: InspectionData) => void;
 }
+
+// Type-safe section keys that contain nested objects
+type ObjectSection = 'client' | 'vehicle' | 'tires' | 'fluids' | 'electrical' | 'safety' | 'equipment' | 'checkout';
 
 const InspectionForm: React.FC<Props> = ({ initialData, onSubmit }) => {
   const [data, setData] = useState<InspectionData>(initialData);
@@ -17,20 +28,24 @@ const InspectionForm: React.FC<Props> = ({ initialData, onSubmit }) => {
     setData(initialData);
   }, [initialData]);
 
-  const handleInputChange = (section: keyof InspectionData, field: string, value: any) => {
-    setData(prev => {
-      const sectionData = prev[section];
-      if (typeof sectionData === 'object' && sectionData !== null && !Array.isArray(sectionData)) {
-        return {
-          ...prev,
-          [section]: {
-            ...sectionData,
-            [field]: value
-          }
-        };
-      }
-      return { ...prev, [section]: value };
-    });
+  /** Update a field inside a nested section object */
+  const updateSectionField = <S extends ObjectSection>(
+    section: S,
+    field: string,
+    value: InspectionData[S][keyof InspectionData[S]]
+  ) => {
+    setData(prev => ({
+      ...prev,
+      [section]: {
+        ...(prev[section] as Record<string, unknown>),
+        [field]: value,
+      },
+    }));
+  };
+
+  /** Update a top-level string field (partsUsed, observations) */
+  const updateTextField = (field: 'partsUsed' | 'observations', value: string) => {
+    setData(prev => ({ ...prev, [field]: value }));
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -56,7 +71,7 @@ const InspectionForm: React.FC<Props> = ({ initialData, onSubmit }) => {
               className="w-full px-5 py-3 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-[#1D63BD] outline-none transition-all placeholder:text-slate-300 font-semibold text-slate-900"
               placeholder="Ex: João da Silva"
               value={data.client.name}
-              onChange={(e) => handleInputChange('client', 'name', e.target.value)}
+              onChange={(e) => updateSectionField('client', 'name', e.target.value)}
             />
           </div>
           <div>
@@ -66,7 +81,7 @@ const InspectionForm: React.FC<Props> = ({ initialData, onSubmit }) => {
               className="w-full px-5 py-3 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-[#1D63BD] outline-none transition-all placeholder:text-slate-300 font-semibold text-slate-900"
               placeholder="11 99999-9999"
               value={data.client.phone}
-              onChange={(e) => handleInputChange('client', 'phone', e.target.value)}
+              onChange={(e) => updateSectionField('client', 'phone', e.target.value)}
             />
           </div>
         </div>
@@ -82,7 +97,7 @@ const InspectionForm: React.FC<Props> = ({ initialData, onSubmit }) => {
               className="w-full px-5 py-3 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-[#1D63BD] outline-none transition-all placeholder:text-slate-300 font-semibold text-slate-900"
               placeholder="Ex: BMW 320i M Sport 2023"
               value={data.vehicle.brandModel}
-              onChange={(e) => handleInputChange('vehicle', 'brandModel', e.target.value)}
+              onChange={(e) => updateSectionField('vehicle', 'brandModel', e.target.value)}
             />
           </div>
           <div>
@@ -92,13 +107,13 @@ const InspectionForm: React.FC<Props> = ({ initialData, onSubmit }) => {
                 className="w-full px-4 py-3 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-[#1D63BD] outline-none font-mono font-bold uppercase text-slate-900"
                 placeholder="ABC-1234"
                 value={data.vehicle.plate}
-                onChange={(e) => handleInputChange('vehicle', 'plate', e.target.value)}
+                onChange={(e) => updateSectionField('vehicle', 'plate', e.target.value)}
               />
               <input 
                 className="w-full px-4 py-3 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-[#1D63BD] outline-none font-bold text-slate-900"
                 placeholder="KM"
                 value={data.vehicle.mileage}
-                onChange={(e) => handleInputChange('vehicle', 'mileage', e.target.value)}
+                onChange={(e) => updateSectionField('vehicle', 'mileage', e.target.value)}
               />
             </div>
           </div>
@@ -108,23 +123,17 @@ const InspectionForm: React.FC<Props> = ({ initialData, onSubmit }) => {
       {/* Fluidos */}
       <FormCard title="Verificação de Fluidos" icon="fa-oil-can">
         <div className="grid grid-cols-1 gap-3">
-          {[
-            { id: 'engineOil', label: 'Óleo do Motor' },
-            { id: 'brakeFluid', label: 'Fluido de Freio' },
-            { id: 'coolant', label: 'Líquido de Arrefecimento' },
-            { id: 'wiperFluid', label: 'Limpador de Para-brisa' },
-            { id: 'transmissionFluid', label: 'Fluido de Transmissão' }
-          ].map(item => (
+          {FLUID_FIELDS.map(item => (
             <div key={item.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 bg-slate-50/50 rounded-2xl border border-slate-100">
               <span className="text-sm font-bold text-slate-700 mb-2 sm:mb-0">{item.label}</span>
               <div className="flex flex-wrap gap-2">
-                {[InspectionStatus.OK, InspectionStatus.LOW, InspectionStatus.CHANGE_REQUIRED].map(status => (
+                {FLUID_STATUSES.map(status => (
                   <button
                     key={status}
                     type="button"
-                    onClick={() => handleInputChange('fluids', item.id, status)}
+                    onClick={() => updateSectionField('fluids', item.id, status)}
                     className={`px-4 py-2 text-[10px] font-bold rounded-xl border-2 transition-all ${
-                      data.fluids[item.id as keyof typeof data.fluids] === status
+                      data.fluids[item.id] === status
                         ? 'bg-[#1D63BD] text-white border-[#1D63BD] shadow-md shadow-blue-100 scale-105'
                         : 'bg-white text-slate-400 border-slate-100 hover:border-blue-200'
                     }`}
@@ -145,28 +154,25 @@ const InspectionForm: React.FC<Props> = ({ initialData, onSubmit }) => {
             <RatingSelector 
               label="Saúde da Bateria (Voltagem/Amperagem)" 
               value={data.electrical.batteryHealth} 
-              onChange={(val) => handleInputChange('electrical', 'batteryHealth', val)} 
-              labels={['Crítica', '2', '3', '4', '100% OK']}
+              onChange={(val) => updateSectionField('electrical', 'batteryHealth', val)} 
+              labels={[...BATTERY_LABELS]}
             />
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-             {[
-               { id: 'alternator', label: 'Carga do Alternador', icon: 'fa-charging-station' },
-               { id: 'belts', label: 'Estado das Correias', icon: 'fa-life-ring' }
-             ].map(item => (
+             {ELECTRICAL_FIELDS.map(item => (
                <div key={item.id} className="p-4 bg-slate-50/50 rounded-2xl border border-slate-100 flex flex-col space-y-3">
                  <div className="flex items-center space-x-2">
                    <i className={`fas ${item.icon} text-[#1D63BD] text-xs`}></i>
                    <span className="text-xs font-bold text-slate-500 uppercase">{item.label}</span>
                  </div>
                  <div className="flex gap-2">
-                   {[InspectionStatus.OK, InspectionStatus.MINOR_DEFECT, InspectionStatus.MAJOR_DEFECT].map(status => (
+                   {ELECTRICAL_STATUSES.map(status => (
                      <button
                        key={status}
                        type="button"
-                       onClick={() => handleInputChange('electrical', item.id, status)}
+                       onClick={() => updateSectionField('electrical', item.id, status)}
                        className={`flex-1 py-2 text-[9px] font-bold rounded-lg border transition-all ${
-                         data.electrical[item.id as keyof typeof data.electrical] === status
+                         data.electrical[item.id] === status
                            ? 'bg-[#1D63BD] text-white border-[#1D63BD]'
                            : 'bg-white text-slate-400 border-slate-100'
                        }`}
@@ -184,26 +190,21 @@ const InspectionForm: React.FC<Props> = ({ initialData, onSubmit }) => {
       {/* Checkout Final */}
       <FormCard title="Checkout Final" icon="fa-clipboard-check">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {[
-            { id: 'testDrive', label: 'Test Drive Realizado', icon: 'fa-gauge-high' },
-            { id: 'wheelTorque', label: 'Torque de Rodas OK', icon: 'fa-wrench' },
-            { id: 'cleaning', label: 'Limpeza Externa/Interna', icon: 'fa-sparkles' },
-            { id: 'personalObjects', label: 'Sem Objetos Esquecidos', icon: 'fa-suitcase' }
-          ].map(item => (
+          {CHECKOUT_FIELDS.map(item => (
             <label key={item.id} className={`flex items-center justify-between p-4 rounded-2xl border-2 cursor-pointer transition-all ${
-              data.checkout[item.id as keyof typeof data.checkout] 
+              data.checkout[item.id] 
                 ? 'border-[#1D63BD] bg-blue-50/50' 
                 : 'border-slate-100 bg-white hover:border-slate-200'
             }`}>
               <div className="flex items-center space-x-3">
-                <i className={`fas ${item.icon} ${data.checkout[item.id as keyof typeof data.checkout] ? 'text-[#1D63BD]' : 'text-slate-300'}`}></i>
-                <span className={`text-sm font-bold ${data.checkout[item.id as keyof typeof data.checkout] ? 'text-slate-800' : 'text-slate-400'}`}>{item.label}</span>
+                <i className={`fas ${item.icon} ${data.checkout[item.id] ? 'text-[#1D63BD]' : 'text-slate-300'}`}></i>
+                <span className={`text-sm font-bold ${data.checkout[item.id] ? 'text-slate-800' : 'text-slate-400'}`}>{item.label}</span>
               </div>
               <input 
                 type="checkbox"
                 className="w-5 h-5 accent-[#1D63BD]"
-                checked={data.checkout[item.id as keyof typeof data.checkout]}
-                onChange={(e) => handleInputChange('checkout', item.id, e.target.checked)}
+                checked={data.checkout[item.id]}
+                onChange={(e) => updateSectionField('checkout', item.id, e.target.checked)}
               />
             </label>
           ))}
@@ -220,7 +221,7 @@ const InspectionForm: React.FC<Props> = ({ initialData, onSubmit }) => {
               className="w-full px-5 py-4 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-[#1D63BD] outline-none font-semibold text-slate-900 placeholder:text-slate-300"
               placeholder="Ex: Óleo 5W30, Filtro, Velas..."
               value={data.partsUsed}
-              onChange={(e) => handleInputChange('partsUsed', '', e.target.value)}
+              onChange={(e) => updateTextField('partsUsed', e.target.value)}
             />
           </div>
           <div>
@@ -230,7 +231,7 @@ const InspectionForm: React.FC<Props> = ({ initialData, onSubmit }) => {
               className="w-full px-5 py-4 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-[#1D63BD] outline-none font-semibold text-slate-900 placeholder:text-slate-300"
               placeholder="Ex: Próxima troca em 10.000km..."
               value={data.observations}
-              onChange={(e) => handleInputChange('observations', '', e.target.value)}
+              onChange={(e) => updateTextField('observations', e.target.value)}
             />
           </div>
         </div>
@@ -250,3 +251,4 @@ const InspectionForm: React.FC<Props> = ({ initialData, onSubmit }) => {
 };
 
 export default InspectionForm;
+

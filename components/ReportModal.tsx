@@ -11,18 +11,27 @@ interface Props {
 const ReportModal: React.FC<Props> = ({ data, onClose, onSaveToHistory }) => {
   
   const handleWhatsApp = () => {
-    const message = `*CERTIFICADO DE INSPEÇÃO - AUTOCHECK PRO*%0A%0A` +
-      `*Cliente:* ${data.client.name}%0A` +
-      `*Veículo:* ${data.vehicle.brandModel} (${data.vehicle.plate})%0A%0A` +
-      `*Resumo Técnico:*%0A` +
-      `• Pneus: ${data.tires.grooves}%0A` +
-      `• Bateria: ${data.electrical.batteryHealth}/5%0A` +
-      `• Óleo Motor: ${data.fluids.engineOil}%0A%0A` +
-      `*Peças Utilizadas:*%0A${data.partsUsed || 'Manutenção preventiva básica'}%0A%0A` +
+    const phone = data.client.phone.replace(/\D/g, '');
+    if (!phone || phone.length < 10) {
+      alert('Número de telefone inválido ou não informado. Verifique os dados do cliente.');
+      return;
+    }
+
+    const message =
+      `*CERTIFICADO DE INSPEÇÃO - AUTOCHECK PRO*\n\n` +
+      `*Cliente:* ${data.client.name}\n` +
+      `*Veículo:* ${data.vehicle.brandModel} (${data.vehicle.plate})\n\n` +
+      `*Resumo Técnico:*\n` +
+      `• Pneus: ${data.tires.grooves}\n` +
+      `• Bateria: ${data.electrical.batteryHealth}/5\n` +
+      `• Óleo Motor: ${data.fluids.engineOil}\n\n` +
+      `*Peças Utilizadas:*\n${data.partsUsed || 'Manutenção preventiva básica'}\n\n` +
       `*Seu veículo está pronto e seguro para rodar!*`;
     
-    const phone = data.client.phone.replace(/\D/g, '');
-    window.open(`https://api.whatsapp.com/send?phone=55${phone}&text=${message}`, '_blank');
+    window.open(
+      `https://api.whatsapp.com/send?phone=55${phone}&text=${encodeURIComponent(message)}`,
+      '_blank'
+    );
   };
 
   const handleSave = () => {
@@ -31,8 +40,8 @@ const ReportModal: React.FC<Props> = ({ data, onClose, onSaveToHistory }) => {
   };
 
   return (
-    <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-[100] p-4 overflow-y-auto">
-      <div className="bg-white rounded-3xl w-full max-w-2xl my-8 overflow-hidden flex flex-col shadow-2xl animate-in fade-in zoom-in duration-200">
+    <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-start justify-center z-[100] p-4 overflow-y-auto">
+      <div className="bg-white rounded-3xl w-full max-w-2xl my-auto overflow-y-auto flex flex-col shadow-2xl animate-in fade-in zoom-in duration-200">
         
         {/* Banner de Perfil de Relatório */}
         <div className="p-8 bg-gradient-to-br from-[#1D63BD] to-cyan-500 text-white relative">

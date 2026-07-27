@@ -9,7 +9,8 @@ interface Props {
 }
 
 const RatingSelector: React.FC<Props> = ({ label, value, onChange, labels }) => {
-  const options = labels || ['1', '2', '3', '4', '5'];
+  const defaultLabels = ['1', '2', '3', '4', '5'];
+  const options = (labels && labels.length > 0) ? labels : defaultLabels;
   
   return (
     <div className="space-y-3">

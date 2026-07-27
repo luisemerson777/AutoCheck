@@ -1,0 +1,14 @@
+/* AutoCheck Pro - Base Styles */
+/* Referenced by index.html — prevents 404 console error */
+
+/* Smooth scrolling for the whole page */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Ensure print styles from index.html take effect cleanly */
+@media print {
+  .no-print {
+    display: none !important;
+  }
+}
